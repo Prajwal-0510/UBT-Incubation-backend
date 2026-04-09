@@ -95,6 +95,7 @@ public class SecurityConfig {
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .requestMatchers("/contact/inquiries/**").hasRole("ADMIN")
                 .requestMatchers(HttpMethod.POST, "/auth/verify").hasRole("ADMIN")
+                    .requestMatchers("/actuator/**").permitAll()
 
 
 
