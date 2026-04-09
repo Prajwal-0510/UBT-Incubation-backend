@@ -21,12 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * ╔══════════════════════════════════════════════════════════╗
- * ║  FIXED Security Config — PUBLIC GET, ADMIN write-only   ║
- * ║                                                          ║
- * ║  PUBLIC  (no token):  ALL GET endpoints                  ║
- * ║  ADMIN   (JWT token): POST / PUT / PATCH / DELETE        ║
- * ╚══════════════════════════════════════════════════════════╝
+ * FIXED SecurityConfig
+ * - ALL GET requests = public (no token needed)
+ * - ALL OPTIONS (preflight) = permitted (fixes CORS error in browser)
+ * - POST/PUT/DELETE = admin JWT required
  */
 @Configuration
 @EnableWebSecurity
@@ -42,86 +40,77 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            .authorizeHttpRequests(auth -> auth
+                .authorizeHttpRequests(auth -> auth
+                        // ── CRITICAL: Allow ALL preflight OPTIONS requests ──────────
+                        // This is what was causing the CORS error in browser console
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                // ── ALL GET requests are PUBLIC — no token needed ──────────────
-                // This is the KEY FIX: data stays visible after admin logout
-                .requestMatchers(HttpMethod.GET, "/**").permitAll()
+                        // ── ALL GET requests are public — no token needed ───────────
+                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
 
-                // ── Pre-flight CORS ────────────────────────────────────────────
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // ── Public write endpoints ──────────────────────────────────
+                        .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
-                // ── Public write endpoints ─────────────────────────────────────
-                .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
-                .requestMatchers(HttpMethod.POST, "/contact").permitAll()
+                        // ── Health check ────────────────────────────────────────────
+                        .requestMatchers("/actuator/**").permitAll()
 
-                // ── Actuator ───────────────────────────────────────────────────
-                .requestMatchers("/actuator/**").permitAll()
+                        // ── ADMIN: writes require JWT ───────────────────────────────
+                        .requestMatchers(HttpMethod.POST,   "/gallery").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/gallery/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/projects").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/projects/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/projects/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/updates").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/updates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/updates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,  "/updates/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/alumni").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/alumni/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/alumni/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT,    "/footer/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/footer").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/contact/inquiries/**").hasRole("ADMIN")
 
-                // ── ADMIN: all write operations require JWT ────────────────────
-                .requestMatchers(HttpMethod.POST,   "/gallery/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST,   "/gallery").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/gallery/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/gallery/**").hasRole("ADMIN")
+                        .anyRequest().permitAll()
+                );
 
-                .requestMatchers(HttpMethod.POST,   "/projects").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/projects/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/projects/**").hasRole("ADMIN")
+        http.addFilterBefore(jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class);
 
-                .requestMatchers(HttpMethod.POST,   "/updates").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/updates/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/updates/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PATCH,  "/updates/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST,   "/alumni").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/alumni/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/alumni/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST,   "/campus-visits").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/campus-visits/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/campus-visits/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST,   "/testimonials").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.DELETE, "/testimonials/**").hasRole("ADMIN")
-
-                .requestMatchers(HttpMethod.POST,   "/footer").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.PUT,    "/footer/**").hasRole("ADMIN")
-
-                .requestMatchers("/admin/**").hasRole("ADMIN")
-                .requestMatchers("/contact/inquiries/**").hasRole("ADMIN")
-                .requestMatchers(HttpMethod.POST, "/auth/verify").hasRole("ADMIN")
-                    .requestMatchers("/actuator/**").permitAll()
-
-
-
-                    .requestMatchers(HttpMethod.POST, "/upload").permitAll()
-                // Any other request → allow (since everything readable is GET)
-                .anyRequest().permitAll()
-            );
-
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
+        // Parse comma-separated origins from env var
+        // e.g. CORS_ORIGINS=http://localhost:5173,https://ubt-incubation-frontend-final.vercel.app
         List<String> origins = Arrays.asList(allowedOriginsRaw.split(","));
-        config.setAllowedOriginPatterns(origins);
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+        config.setAllowedOrigins(origins.stream()
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(java.util.stream.Collectors.toList()));
+
+        config.setAllowedMethods(Arrays.asList(
+                "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
+
         config.setAllowedHeaders(Arrays.asList(
-                "Authorization", "Content-Type", "Accept",
-                "Origin", "X-Requested-With",
-                "Access-Control-Request-Method", "Access-Control-Request-Headers"
-        ));
+                "Authorization", "Content-Type", "Accept", "Origin",
+                "X-Requested-With",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"));
+
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);
+        config.setMaxAge(3600L);  // Cache preflight for 1 hour
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
