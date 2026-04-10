@@ -21,10 +21,12 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * FIXED SecurityConfig
- * - ALL GET requests = public (no token needed)
- * - ALL OPTIONS (preflight) = permitted (fixes CORS error in browser)
- * - POST/PUT/DELETE = admin JWT required
+ * SecurityConfig — FIXED
+ *
+ * KEY FIX: Spring Security evaluates rules top-to-bottom, first match wins.
+ * Admin GET routes (/contact/inquiries, /admin/**) MUST be declared
+ * BEFORE the public GET /** wildcard, otherwise they get swallowed by it
+ * and @PreAuthorize returns 403 even with a valid token.
  */
 @Configuration
 @EnableWebSecurity
@@ -46,21 +48,29 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
-                        // ── CRITICAL: Allow ALL preflight OPTIONS requests ──────────
-                        // This is what was causing the CORS error in browser console
+
+                        // ── 1. Preflight — always open ──────────────────────────────
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ── ALL GET requests are public — no token needed ───────────
+                        // ── 2. ADMIN GET routes — MUST be before GET /** wildcard ───
+                        // If these come after GET /**, Spring matches that first and
+                        // never reaches these rules → @PreAuthorize throws 403.
+                        .requestMatchers(HttpMethod.GET, "/contact/inquiries").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/contact/inquiries/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+
+                        // ── 3. All other GET requests are public ────────────────────
                         .requestMatchers(HttpMethod.GET, "/**").permitAll()
 
-                        // ── Public write endpoints ──────────────────────────────────
+                        // ── 4. Public write endpoints ───────────────────────────────
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
-                        // ── Health check ────────────────────────────────────────────
+                        // ── 5. Health check ─────────────────────────────────────────
                         .requestMatchers("/actuator/**").permitAll()
 
-                        // ── ADMIN: writes require JWT ───────────────────────────────
+                        // ── 6. Admin writes ─────────────────────────────────────────
+                        .requestMatchers(HttpMethod.POST,   "/upload/image").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/gallery").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/gallery/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/projects").hasRole("ADMIN")
@@ -91,8 +101,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // Parse comma-separated origins from env var
-        // e.g. CORS_ORIGINS=http://localhost:5173,https://ubt-incubation-frontend-final.vercel.app
         List<String> origins = Arrays.asList(allowedOriginsRaw.split(","));
         config.setAllowedOrigins(origins.stream()
                 .map(String::trim)
@@ -110,7 +118,7 @@ public class SecurityConfig {
 
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L);  // Cache preflight for 1 hour
+        config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
