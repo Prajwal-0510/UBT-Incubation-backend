@@ -34,7 +34,7 @@ public class GalleryItem {
     private String category; // 'college-visit' or 'student-project'
 
     @NotBlank(message = "Image URL is required")
-    @Column(name = "img_url", columnDefinition = "MEDIUMTEXT")
+    @Column(name = "img_url", columnDefinition = "TEXT")
     private String img;
 
     @Column(name = "item_date")
