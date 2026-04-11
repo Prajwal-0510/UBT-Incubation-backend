@@ -19,15 +19,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * SecurityConfig — FIXED
- *
- * KEY FIX: Spring Security evaluates rules top-to-bottom, first match wins.
- * Admin GET routes (/contact/inquiries, /admin/**) MUST be declared
- * BEFORE the public GET /** wildcard, otherwise they get swallowed by it
- * and @PreAuthorize returns 403 even with a valid token.
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -44,33 +37,35 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
+                .sessionManagement(s ->
+                        s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
-                        // ── 1. Preflight — always open ──────────────────────────────
+                        // 1. Preflight
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // ── 2. ADMIN GET routes — MUST be before GET /** wildcard ───
-                        // If these come after GET /**, Spring matches that first and
-                        // never reaches these rules → @PreAuthorize throws 403.
-                        .requestMatchers(HttpMethod.GET, "/contact/inquiries").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/contact/inquiries/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+                        // 2. Public GET routes
+                        .requestMatchers(HttpMethod.GET, "/gallery/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/projects/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/updates/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/alumni/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/testimonials/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/footer/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/**").permitAll()
 
-                        // ── 3. All other GET requests are public ────────────────────
-                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
-
-                        // ── 4. Public write endpoints ───────────────────────────────
+                        // 3. Public POST routes
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/contact").permitAll()
 
-                        // ── 5. Health check ─────────────────────────────────────────
-                        .requestMatchers("/actuator/**").permitAll()
+                        // 4. Upload — permit all (JWT checked by @PreAuthorize in other routes)
+                        .requestMatchers(HttpMethod.POST, "/upload").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/upload/image").permitAll()
 
-                        // ── 6. Admin writes ─────────────────────────────────────────
-                        .requestMatchers(HttpMethod.POST,   "/upload/image").hasRole("ADMIN")
+                        // 5. Admin-only GET routes (MUST be before anyRequest)
+                        .requestMatchers(HttpMethod.GET, "/contact/inquiries/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/**").hasRole("ADMIN")
+
+                        // 6. Admin writes
                         .requestMatchers(HttpMethod.POST,   "/gallery").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/gallery/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/projects").hasRole("ADMIN")
@@ -85,8 +80,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.DELETE, "/alumni/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT,    "/footer/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST,   "/footer").hasRole("ADMIN")
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/contact/inquiries/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,   "/testimonials").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/testimonials/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH,  "/contact/inquiries/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/contact/inquiries/**").hasRole("ADMIN")
 
                         .anyRequest().permitAll()
                 );
@@ -101,21 +98,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        List<String> origins = Arrays.asList(allowedOriginsRaw.split(","));
-        config.setAllowedOrigins(origins.stream()
+        List<String> origins = Arrays.stream(allowedOriginsRaw.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
-                .collect(java.util.stream.Collectors.toList()));
+                .collect(Collectors.toList());
 
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(Arrays.asList(
                 "GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-
         config.setAllowedHeaders(Arrays.asList(
                 "Authorization", "Content-Type", "Accept", "Origin",
                 "X-Requested-With",
                 "Access-Control-Request-Method",
                 "Access-Control-Request-Headers"));
-
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);

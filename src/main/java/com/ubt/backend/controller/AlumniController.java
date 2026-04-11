@@ -52,7 +52,7 @@ public class AlumniController {
                 .name(req.getName()).batch(req.getBatch())
                 .degree(req.getDegree()).institution(req.getInstitution())
                 .currentRole(req.getCurrentRole()).achievement(req.getAchievement())
-                .img(req.getImg()).category(req.getCategory() != null ? req.getCategory() : "industry")
+                .imgUrl(req.getImg()).category(req.getCategory() != null ? req.getCategory() : "industry")
                 .linkedIn(req.getLinkedIn()).active(true)
                 .build();
         Alumni saved = alumniRepository.save(a);
@@ -73,7 +73,7 @@ public class AlumniController {
         a.setInstitution(req.getInstitution());
         a.setCurrentRole(req.getCurrentRole());
         a.setAchievement(req.getAchievement());
-        if (req.getImg() != null) a.setImg(req.getImg());
+        if (req.getImg() != null) a.setImgUrl(req.getImg());
         if (req.getCategory() != null) a.setCategory(req.getCategory());
         a.setLinkedIn(req.getLinkedIn());
         Alumni saved = alumniRepository.save(a);
@@ -96,7 +96,7 @@ public class AlumniController {
                 .id(a.getId()).name(a.getName()).batch(a.getBatch())
                 .degree(a.getDegree()).institution(a.getInstitution())
                 .currentRole(a.getCurrentRole()).achievement(a.getAchievement())
-                .img(a.getImg()).category(a.getCategory())
+                .img(a.getImgUrl()).category(a.getCategory())
                 .linkedIn(a.getLinkedIn()).createdAt(a.getCreatedAt())
                 .build();
     }

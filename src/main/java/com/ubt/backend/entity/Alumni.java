@@ -41,8 +41,8 @@ public class Alumni {
     @Column(columnDefinition = "TEXT")
     private String achievement;
 
-    @Column(name = "img_url", columnDefinition = "MEDIUMTEXT")
-    private String img;   // URL or base64
+    @Column(name = "img_url", columnDefinition = "TEXT")
+    private String imgUrl;
 
     @Column(length = 30)
     @Builder.Default

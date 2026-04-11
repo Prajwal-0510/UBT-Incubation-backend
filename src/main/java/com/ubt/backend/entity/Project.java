@@ -34,8 +34,8 @@ public class Project {
     @Column(nullable = false, length = 50)
     private String level;
 
-    @Column(name = "img_url", columnDefinition = "MEDIUMTEXT")
-    private String img;
+    @Column(name = "img_url", columnDefinition = "TEXT")
+    private String imgUrl;
 
     @Column(columnDefinition = "TEXT")
     private String description;

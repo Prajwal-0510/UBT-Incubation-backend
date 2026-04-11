@@ -35,7 +35,7 @@ public class GalleryItem {
 
     @NotBlank(message = "Image URL is required")
     @Column(name = "img_url", columnDefinition = "TEXT")
-    private String img;
+    private String imgUrl;
 
     @Column(name = "item_date")
     private LocalDate date;

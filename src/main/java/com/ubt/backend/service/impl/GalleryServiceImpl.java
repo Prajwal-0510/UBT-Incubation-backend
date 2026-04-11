@@ -54,7 +54,7 @@ public class GalleryServiceImpl implements GalleryService {
         GalleryItem item = GalleryItem.builder()
                 .title(request.getTitle())
                 .category(request.getCategory())
-                .img(request.getImg())
+                .imgUrl(request.getImg())
                 .date(request.getDate() != null ? request.getDate() : LocalDate.now())
                 .active(true)
                 .build();
@@ -77,7 +77,7 @@ public class GalleryServiceImpl implements GalleryService {
                 .id(item.getId())
                 .title(item.getTitle())
                 .category(item.getCategory())
-                .img(item.getImg())
+                .img(item.getImgUrl())
                 .date(item.getDate())
                 .createdAt(item.getCreatedAt())
                 .build();

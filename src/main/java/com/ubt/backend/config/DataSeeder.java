@@ -44,37 +44,37 @@ public class DataSeeder implements CommandLineRunner {
         galleryRepository.save(GalleryItem.builder()
                 .title("IIT Nagpur Campus Visit")
                 .category("college-visit")
-                .img("https://images.unsplash.com/photo-1562774053-701939374585?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1562774053-701939374585?w=600")
                 .date(LocalDate.of(2024, 3, 15)).build());
 
         galleryRepository.save(GalleryItem.builder()
                 .title("VNIT Lab Tour")
                 .category("college-visit")
-                .img("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=600")
                 .date(LocalDate.of(2024, 2, 20)).build());
 
         galleryRepository.save(GalleryItem.builder()
                 .title("Symbiosis University Workshop")
                 .category("college-visit")
-                .img("https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1509062522246-3755977927d7?w=600")
                 .date(LocalDate.of(2024, 1, 10)).build());
 
         galleryRepository.save(GalleryItem.builder()
                 .title("AI Attendance System")
                 .category("student-project")
-                .img("https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1531482615713-2afd69097998?w=600")
                 .date(LocalDate.of(2024, 3, 1)).build());
 
         galleryRepository.save(GalleryItem.builder()
                 .title("Smart Traffic Controller")
                 .category("student-project")
-                .img("https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1581092921461-eab62e97a780?w=600")
                 .date(LocalDate.of(2024, 2, 15)).build());
 
         galleryRepository.save(GalleryItem.builder()
                 .title("NLP Research Dashboard")
                 .category("student-project")
-                .img("https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1551836022-d5d88e9218df?w=600")
                 .date(LocalDate.of(2024, 1, 22)).build());
 
         log.info("Gallery seeded with 6 items.");
@@ -90,7 +90,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Smart Parking System using IoT")
                 .domain("IoT / Embedded")
                 .level("BE/BTech")
-                .img("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600")
                 .description("An IoT-based automated parking management system using RFID and ultrasonic sensors.")
                 .techStack("Arduino,RFID,NodeMCU,Firebase")
                 .duration("4 months")
@@ -100,7 +100,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Deep Learning for Medical Image Analysis")
                 .domain("AI & ML")
                 .level("PhD R&D")
-                .img("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=600")
                 .description("A CNN-based deep learning model achieving 97.3% accuracy in detecting tumor regions from MRI scans.")
                 .techStack("Python,TensorFlow,OpenCV,DICOM")
                 .duration("18 months")
@@ -110,7 +110,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("Blockchain-based Supply Chain Tracker")
                 .domain("Blockchain")
                 .level("ME/MTech")
-                .img("https://images.unsplash.com/photo-1639322537228-f710d846310a?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1639322537228-f710d846310a?w=600")
                 .description("Decentralized supply chain transparency platform built on Ethereum smart contracts.")
                 .techStack("Solidity,React,Web3.js,IPFS")
                 .duration("8 months")
@@ -120,7 +120,7 @@ public class DataSeeder implements CommandLineRunner {
                 .title("NLP-based Resume Screening Tool")
                 .domain("NLP / AI")
                 .level("MBA Projects")
-                .img("https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600")
+                .imgUrl("https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600")
                 .description("An intelligent HR tool using BERT and transformer models to automate resume screening.")
                 .techStack("Python,BERT,FastAPI,PostgreSQL")
                 .duration("6 months")

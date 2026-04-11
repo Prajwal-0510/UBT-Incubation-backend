@@ -9,7 +9,7 @@ import java.time.LocalDate;
 public class UpdateRequest {
 
     @NotBlank(message = "Type is required")
-    private String type; // 'announcement', 'achievement', 'event', 'news'
+    private String type;
 
     @NotBlank(message = "Title is required")
     private String title;
@@ -19,5 +19,5 @@ public class UpdateRequest {
 
     private LocalDate date;
 
-    private Boolean pinned = false;
+    private Boolean pinned;
 }
