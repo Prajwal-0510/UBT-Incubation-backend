@@ -12,8 +12,6 @@ import java.util.Map;
 @Service
 public class CloudinaryService {
 
-    // Inject credentials directly — do NOT autowire the Cloudinary bean
-    // because Railway's CLOUDINARY_URL env var may be corrupting it
     @Value("${cloudinary.cloud-name}")
     private String cloudName;
 
@@ -24,13 +22,12 @@ public class CloudinaryService {
     private String apiSecret;
 
     public String uploadImage(MultipartFile file) throws IOException {
-        // Build a FRESH Cloudinary instance with ONLY these 3 params
-        // This completely ignores any CLOUDINARY_URL env var
+        // Build fresh instance using only these 3 values
+        // Completely ignores any CLOUDINARY_URL env var Railway injects
         Cloudinary cloudinary = new Cloudinary(ObjectUtils.asMap(
                 "cloud_name", cloudName,
                 "api_key",    apiKey,
                 "api_secret", apiSecret
-                // NO folder — no other params
         ));
 
         Map<?, ?> result = cloudinary.uploader().upload(
