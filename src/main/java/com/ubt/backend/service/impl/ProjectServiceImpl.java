@@ -25,6 +25,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Autowired
     private ProjectRepository projectRepository;
 
+    // ── READ ──────────────────────────────────────────────────────────────────
+
     @Override
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAllProjects() {
@@ -46,24 +48,29 @@ public class ProjectServiceImpl implements ProjectService {
                 .collect(Collectors.toList());
     }
 
+    // ── WRITE ─────────────────────────────────────────────────────────────────
+
     @Override
     public ProjectResponse addProject(ProjectRequest request) {
         if (!VALID_LEVELS.contains(request.getLevel())) {
             throw new BadRequestException("Invalid level. Must be one of: " + VALID_LEVELS);
         }
 
-        // Convert tech list to comma-separated string for storage
+        // Convert tech list → comma-separated string for DB storage
         String techStack = null;
         if (request.getTech() != null && !request.getTech().isEmpty()) {
-            techStack = String.join(",", request.getTech());
+            techStack = request.getTech().stream()
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.joining(","));
         }
 
         Project project = Project.builder()
-                .title(request.getTitle())
+                .title(request.getTitle().trim())
                 .domain(request.getDomain())
                 .level(request.getLevel())
-                .imgUrl(request.getImg())
-                .description(request.getDescription())
+                .imgUrl(request.getImg())           // frontend field: img  → entity field: imgUrl
+                .description(request.getDesc())     // frontend field: desc → entity field: description
                 .techStack(techStack)
                 .duration(request.getDuration())
                 .date(request.getDate())
@@ -78,15 +85,27 @@ public class ProjectServiceImpl implements ProjectService {
     public void deleteProject(Long id) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", id));
-        // Soft delete
+        // Soft delete — keeps record in DB, just hides it from public
         project.setActive(false);
         projectRepository.save(project);
     }
 
+    // ── MAPPER ────────────────────────────────────────────────────────────────
+
+    /**
+     * Converts Project entity → ProjectResponse DTO.
+     *
+     * Key mappings:
+     *   entity.imgUrl       → response.img
+     *   entity.description  → response.desc
+     *   entity.techStack    → response.tech (List<String>)
+     */
     private ProjectResponse toResponse(Project p) {
-        // Convert comma-separated tech stack back to list
         List<String> techList = (p.getTechStack() != null && !p.getTechStack().isBlank())
-                ? Arrays.asList(p.getTechStack().split(","))
+                ? Arrays.stream(p.getTechStack().split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toList())
                 : List.of();
 
         return ProjectResponse.builder()
@@ -94,8 +113,8 @@ public class ProjectServiceImpl implements ProjectService {
                 .title(p.getTitle())
                 .domain(p.getDomain())
                 .level(p.getLevel())
-                .img(p.getImgUrl())
-                .desc(p.getDescription())
+                .img(p.getImgUrl())           // entity imgUrl → DTO img
+                .desc(p.getDescription())     // entity description → DTO desc
                 .tech(techList)
                 .duration(p.getDuration())
                 .date(p.getDate())

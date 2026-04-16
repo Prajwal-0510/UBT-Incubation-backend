@@ -5,6 +5,15 @@ import lombok.Data;
 
 import java.util.List;
 
+/**
+ * ProjectRequest — received from frontend on POST /projects.
+ *
+ * Frontend sends:
+ *   { title, domain, level, img, desc, tech: [...], duration, date }
+ *
+ * "desc" is used here (not "description") so the JSON field name matches
+ * exactly what AdminContext.jsx sends via addProject().
+ */
 @Data
 public class ProjectRequest {
 
@@ -14,15 +23,15 @@ public class ProjectRequest {
     private String domain;
 
     @NotBlank(message = "Level is required")
-    private String level; // 'PhD R&D', 'ME/MTech', 'BE/BTech', 'MBA Projects'
+    private String level; // 'PhD R&D' | 'ME/MTech' | 'BE/BTech' | 'MBA Projects'
 
-    private String img;
+    private String img; // Cloudinary URL (uploaded before this request is made)
 
-    private String description;
+    private String desc; // project description — matches frontend form.desc key
 
-    private List<String> tech; // sent as array from frontend
+    private List<String> tech; // array of tech tags e.g. ["React","Python"]
 
     private String duration;
 
-    private String date; // "2024-03"
+    private String date; // "YYYY-MM" e.g. "2024-03"
 }

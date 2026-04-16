@@ -14,17 +14,20 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 
 /**
- * Seeds the database with initial data from AdminContext.jsx seed values.
+ * Seeds the database with initial data.
  * Only runs when the tables are empty (safe for production restart).
+ *
+ * FIX: Project.builder() now uses .description() — the correct entity field name.
+ *      The DTO layer maps entity.description → response.desc for the frontend.
  */
 @Component
 public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
 
-    @Autowired private GalleryRepository   galleryRepository;
-    @Autowired private ProjectRepository   projectRepository;
-    @Autowired private UpdateRepository    updateRepository;
+    @Autowired private GalleryRepository     galleryRepository;
+    @Autowired private ProjectRepository     projectRepository;
+    @Autowired private UpdateRepository      updateRepository;
     @Autowired private TestimonialRepository testimonialRepository;
 
     @Override
@@ -85,6 +88,9 @@ public class DataSeeder implements CommandLineRunner {
     private void seedProjects() {
         if (projectRepository.count() > 0) return;
         log.info("Seeding projects...");
+
+        // NOTE: entity field is `description`, NOT `desc`.
+        // The service layer maps description → desc in ProjectResponse for the frontend.
 
         projectRepository.save(Project.builder()
                 .title("Smart Parking System using IoT")
